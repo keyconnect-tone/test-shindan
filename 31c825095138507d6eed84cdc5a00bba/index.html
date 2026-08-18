@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f6f8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>出欠チェック</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f6f8;color:#1f2937}.gate{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;background:#f5f6f8}.gatebox{width:min(100%,420px);background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,.08)}.gate h1{margin:0 0 8px;font-size:24px}.gate p{margin:0 0 18px;color:#6b7280;font-size:14px}.pin{width:100%;font-size:28px;letter-spacing:.25em;text-align:center;padding:14px;border:1px solid #d1d5db;border-radius:12px}.enter{width:100%;margin-top:12px;border:0;background:#2563eb;color:#fff;border-radius:12px;padding:14px;font-size:17px;font-weight:700}.error{min-height:20px;margin-top:10px!important;color:#dc2626!important;text-align:center}.app{display:none}.wrap{max-width:720px;margin:0 auto;padding:14px 14px 40px}.header{position:sticky;top:0;z-index:10;background:rgba(245,246,248,.96);backdrop-filter:blur(8px);padding:8px 0 12px}h2{margin:0 0 10px;font-size:24px}.summary{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,0,0,.04)}.count{font-size:18px;font-weight:700}.count strong{font-size:28px;color:#2563eb}.reset{border:1px solid #fecaca;background:#fff;color:#dc2626;border-radius:10px;padding:10px 12px;font-weight:700}.hint{margin-top:8px;font-size:12px;color:#6b7280;line-height:1.5}.list{display:grid;gap:10px;margin-top:14px}.person{width:100%;min-height:62px;border:1px solid #e5e7eb;background:#fff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;text-align:left;font-size:18px;font-weight:700;color:#1f2937;-webkit-tap-highlight-color:transparent}.person:active{transform:scale(.99)}.num{width:26px;color:#9ca3af;font-size:14px}.name{flex:1}.mark{font-size:24px;color:#9ca3af}.person.done{background:#d1fae5;color:#065f46;opacity:.75}.person.done .name{text-decoration:line-through}.person.done .mark{color:#047857}.footer{text-align:center;color:#9ca3af;font-size:11px;margin-top:18px}
+</style>
+</head>
+<body>
+<section class="gate" id="gate">
+  <div class="gatebox">
+    <h1>PINを入力</h1>
+    <p>出欠チェックを開くには4桁のPINを入力してください。</p>
+    <input class="pin" id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" autofocus>
+    <button class="enter" id="enter" type="button">開く</button>
+    <p class="error" id="error"></p>
+  </div>
+</section>
+<main class="app" id="app">
+  <div class="wrap">
+    <div class="header">
+      <h2>飲み会 出欠チェック</h2>
+      <div class="summary">
+        <div class="count">到着 <strong id="arrived">0</strong> / 20人</div>
+        <button class="reset" id="reset" type="button">全員リセット</button>
+      </div>
+      <div class="hint">名前をタップすると到着済みになります。もう一度タップすると戻せます。状態はこのiPhoneに自動保存されます。</div>
+    </div>
+    <section class="list" id="list"></section>
+    <div class="footer">2026-08-19</div>
+  </div>
+</main>
+<script>
+const gate=document.getElementById('gate'),app=document.getElementById('app'),pin=document.getElementById('pin'),error=document.getElementById('error');
+function unlock(){if(pin.value==='0819'){sessionStorage.setItem('nomikai-unlocked','1');gate.style.display='none';app.style.display='block';pin.value='';error.textContent='';}else{error.textContent='PINが違います';pin.select();}}
+document.getElementById('enter').addEventListener('click',unlock);pin.addEventListener('keydown',e=>{if(e.key==='Enter')unlock()});
+if(sessionStorage.getItem('nomikai-unlocked')==='1'){gate.style.display='none';app.style.display='block';}
+const people=["トネ","まり","上野","前田","中西","石切山","かめやん","中津留さん","横溝さん","Hokan 吉岡さん","中本さん","洲崎さん","喜屋武さん","Ino Yujiさん","イチロー","赤松さん","ラウリ","親方","海老谷さん","大塚氏"];
+const KEY='nomikai-20260819-attendance';let state={};try{state=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){state={}}
+const list=document.getElementById('list'),arrived=document.getElementById('arrived');
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function render(){let n=0;list.innerHTML='';people.forEach((name,i)=>{const done=!!state[name];if(done)n++;const b=document.createElement('button');b.type='button';b.className='person'+(done?' done':'');b.setAttribute('aria-pressed',done?'true':'false');const num=document.createElement('span');num.className='num';num.textContent=i+1;const nm=document.createElement('span');nm.className='name';nm.textContent=name;const mk=document.createElement('span');mk.className='mark';mk.textContent=done?'✓':'○';b.append(num,nm,mk);b.addEventListener('click',()=>{state[name]=!state[name];save();render()});list.appendChild(b)});arrived.textContent=n}
+document.getElementById('reset').addEventListener('click',()=>{if(confirm('全員を未到着に戻しますか？')){state={};save();render()}});render();
+</script>
+</body>
+</html>
